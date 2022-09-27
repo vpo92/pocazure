@@ -8,7 +8,7 @@ console.log(jsonData);
 
 
 app.get('/', (req, res) => {
-  res.send("Bienvenue sur l'API Penelope GB");
+  res.send("<h1>Bienvenue sur l'API Penelope GB</h1><ul><li>GET /files : Lister mes fichiers penelopes</li><li>GET /files/:id : Telecharger un fichier</li></ul>");
 });
 
 app.get('/files', (req, res) => {
