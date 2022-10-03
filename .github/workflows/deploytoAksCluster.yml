@@ -1,0 +1,50 @@
+on: [push]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    
+    - uses: azure/docker-login@v1
+      with:
+        login-server: peneloperegistry.azurecr.io
+        username: ${{ secrets.acr_peneloperegistry_username }}
+        password: ${{ secrets.acr_peneloperegistry_password }}
+    
+    - name: Build and push image to ACR
+      id: build-image
+      run: |
+        docker build "$GITHUB_WORKSPACE/" -f  "dockerfile" -t peneloperegistry.azurecr.io/penelopeaks:${{ github.sha }} --label dockerfile-path=dockerfile
+        docker push peneloperegistry.azurecr.io/penelopeaks:${{ github.sha }}
+    
+    - uses: azure/k8s-set-context@v1
+      with:
+         kubeconfig: ${{ secrets.aks_penelopeaks_kubeConfig }}
+      id: login
+    
+    - name: Create namespace
+      run: |
+        namespacePresent=`kubectl get namespace | grep penelope-aks88ec | wc -l`
+        if [ $namespacePresent -eq 0 ]
+        then
+            echo `kubectl create namespace penelope-aks88ec`
+        fi
+
+    - uses: azure/k8s-create-secret@v1
+      with:
+        namespace: penelope-aks88ec
+        container-registry-url: peneloperegistry.azurecr.io
+        container-registry-username: ${{ secrets.acr_peneloperegistry_username }}
+        container-registry-password: ${{ secrets.acr_peneloperegistry_password }}
+        secret-name: penelopeaksdockerauth
+       
+    - uses: azure/k8s-deploy@v1.2
+      with:
+        namespace: penelope-aks88ec
+        manifests: |
+          manifests/deployment.yml
+          manifests/service.yml
+        images: |
+          peneloperegistry.azurecr.io/penelopeaks:${{ github.sha }}
+        imagepullsecrets: |
+          penelopeaksdockerauth
