@@ -1,0 +1,19 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: "penelopeaks-6fd1"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: "penelopeaks-6fd1"
+  template:
+    metadata:
+      labels:
+        app: "penelopeaks-6fd1"
+    spec:
+      containers:
+        - name: "penelopeaks-6fd1"
+          image: "peneloperegistry.azurecr.io/penelopeaks"
+          ports:
+          - containerPort: 8080
